@@ -707,3 +707,73 @@ export const MultiAccountPlugin: Plugin = async ({ client }) => {
     },
   }
 }
+
+const MultiAccountV2Plugin = {
+  id: "multi-account",
+  server: MultiAccountPlugin,
+  async setup(ctx: any) {
+    const client = {
+      session: {
+        abort: ({ path }: any) => ctx.session.interrupt({ sessionID: path.id, continue: false }),
+      },
+      tui: { showToast: async () => undefined },
+      app: { log: async ({ body }: any) => debugLog(`[${body?.level ?? "info"}] ${body?.message ?? ""}`) },
+    }
+    const legacy = await (MultiAccountPlugin as any)({ client })
+    if (!legacy || Object.keys(legacy).length === 0) return
+
+    await ctx.session.hook("context", async (event: any) => {
+      await legacy["chat.params"]?.(event, { options: event.options })
+    })
+
+    await ctx.session.hook("model.request", async (event: any) => {
+      await legacy["chat.headers"]?.(event, { headers: event.headers })
+    })
+
+    await ctx.session.hook("retry", async (event: any) => {
+      if (event.error?.status !== 429) return
+      await legacy.event?.({
+        event: {
+          type: "session.error",
+          properties: {
+            sessionID: event.sessionID,
+            model: event.model,
+            error: event.error,
+          },
+        },
+      })
+      event.decision = { retry: true, delay: 0 }
+    })
+
+    await ctx.shell.hook("create.before", async (event: any) => {
+      await legacy["shell.env"]?.({}, { env: event.env })
+    })
+
+    const toolInputs: Record<string, any> = {
+      account_status: { type: "object", properties: {}, additionalProperties: false },
+      account_list: { type: "object", properties: {}, additionalProperties: false },
+      account_switch: {
+        type: "object",
+        properties: { account_id: { type: "string" } },
+        required: ["account_id"],
+        additionalProperties: false,
+      },
+      account_config_path: { type: "object", properties: {}, additionalProperties: false },
+    }
+    await ctx.tool.transform((editor: any) => {
+      for (const [name, definition] of Object.entries(legacy.tool ?? {}) as [string, any][]) {
+        editor.add({
+          name,
+          description: definition.description,
+          input: toolInputs[name],
+          options: { codemode: false },
+          async execute(input: any) {
+            return { content: await definition.execute(input) }
+          },
+        })
+      }
+    })
+  },
+}
+
+export default MultiAccountV2Plugin
