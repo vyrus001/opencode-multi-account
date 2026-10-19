@@ -371,6 +371,7 @@ for (const [key, value] of Object.entries(env)) {
           envVarName: tool.schema.string().optional(),
           envJson: tool.schema.string().optional(),
           providerConfigJson: tool.schema.string().optional(),
+          baseUrl: tool.schema.string().optional(),
           priority: tool.schema.number(),
           cooldownMinutes: tool.schema.number().optional(),
           model: tool.schema.string().optional()
@@ -413,6 +414,7 @@ for (const [key, value] of Object.entries(env)) {
             id: args.id,
             name: args.name,
             provider: args.provider,
+            baseUrl: args.baseUrl,
             priority: args.priority,
             cooldownMinutes: args.cooldownMinutes,
             model: args.model,
@@ -440,6 +442,7 @@ for (const [key, value] of Object.entries(env)) {
           envVarName: tool.schema.string().optional(),
           envJson: tool.schema.string().optional(),
           providerConfigJson: tool.schema.string().optional(),
+          baseUrl: tool.schema.string().optional(),
           priority: tool.schema.number().optional(),
           cooldownMinutes: tool.schema.number().optional(),
           model: tool.schema.string().optional()
@@ -449,6 +452,7 @@ for (const [key, value] of Object.entries(env)) {
           const updates: Partial<Omit<Account, "id">> = {}
           if (args.name !== undefined) updates.name = args.name
           if (args.provider !== undefined) updates.provider = args.provider
+          if (args.baseUrl !== undefined) updates.baseUrl = args.baseUrl.trim() || undefined
           if (args.priority !== undefined) updates.priority = args.priority
           if (args.cooldownMinutes !== undefined) updates.cooldownMinutes = args.cooldownMinutes
           if (args.model !== undefined) updates.model = args.model

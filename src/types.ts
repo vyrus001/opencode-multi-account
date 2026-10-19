@@ -31,6 +31,8 @@ export interface Account {
   name: string
   /** Provider yang digunakan, sesuai dengan ID provider di OpenCode */
   provider: string
+  /** Optional custom base URL for this account provider API. */
+  baseUrl?: string
   /** Credential schema baru (disarankan) */
   credentials?: AccountCredentials
   /** API key (legacy compatibility) */

@@ -8,7 +8,7 @@ import { tool } from "@opencode-ai/plugin"
 import { AccountManager } from "./account-manager.js"
 import { isRateLimitError, isAccountRateLimited } from "./rate-limiter.js"
 import { CONFIG_FILE, AUTH_JSON_CANDIDATES } from "./storage.js"
-import { resolveAccountEnv } from "./provider-credentials.js"
+import { applyAccountBaseUrl, resolveAccountBaseUrl, resolveAccountEnv } from "./provider-credentials.js"
 import { buildAuthJsonEntry } from "./auth-json.js"
 import { overwriteAuthJsonProvider } from "./storage.js"
 import { detectRateLimitFromEvent } from "./event-detection.js"
@@ -527,6 +527,18 @@ export const MultiAccountPlugin: Plugin = async ({ client }) => {
   }
 
     return {
+      // Apply the selected account endpoint to this chat request.
+      "chat.params": async (input: any, output: any) => {
+        const sessionID = input?.sessionID
+        const requestedProvider = input?.model?.providerID || input?.provider?.id
+        const account = getManagedAccount(sessionID, requestedProvider)
+        const baseURL = account ? resolveAccountBaseUrl(account) : undefined
+        if (baseURL && account) {
+          if (!output.options) output.options = {}
+          applyAccountBaseUrl({ ...account, baseUrl: baseURL }, output.options)
+        }
+      },
+
       // ─── Inject API key aktif ke shell environment ──────────
       "shell.env": async (input, output) => {
         try {

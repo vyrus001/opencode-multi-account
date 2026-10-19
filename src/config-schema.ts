@@ -124,6 +124,7 @@ function sanitizeAccount(raw: unknown, index: number): { account: Account | null
     id,
     name,
     provider,
+    baseUrl: typeof input.baseUrl === "string" && input.baseUrl.trim() ? input.baseUrl.trim() : undefined,
     priority: sanitizeNumber(input.priority, index + 1),
     cooldownMinutes:
       input.cooldownMinutes === undefined

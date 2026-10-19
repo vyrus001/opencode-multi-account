@@ -47,6 +47,26 @@ export function normalizeAccount(account: Account): { account: Account; changed:
   return { account, changed }
 }
 
+export function resolveAccountBaseUrl(account: Account): string | undefined {
+  const value = account.baseUrl
+    ?? account.credentials?.providerConfig?.baseUrl
+    ?? account.credentials?.providerConfig?.baseURL
+  if (!value?.trim()) return undefined
+
+  try {
+    const url = new URL(value.trim())
+    if (url.protocol !== "http:" && url.protocol !== "https:") return undefined
+    return url.toString().replace(/\/$/, "")
+  } catch {
+    return undefined
+  }
+}
+
+export function applyAccountBaseUrl(account: Account, options: Record<string, unknown>): void {
+  const baseURL = resolveAccountBaseUrl(account)
+  if (baseURL) options.baseURL = baseURL
+}
+
 export function resolveAccountEnv(account: Account): Record<string, string> {
   if (account.credentials?.env) return account.credentials.env
 
